@@ -82,6 +82,11 @@ def normalize_team_name(name: str) -> str:
 
     # Clean up common suffixes
     cleaned = name.strip()
+
+    # Remove "NCAA" suffix (Sports-Reference appends this to tournament teams)
+    if cleaned.endswith("NCAA"):
+        cleaned = cleaned[:-4].strip()
+
     for suffix in [" Wildcats", " Blue Devils", " Wolverines", " Gators",
                    " Tigers", " Bulldogs", " Bears", " Eagles", " Hawks",
                    " Cardinals", " Cavaliers", " Hoosiers", " Jayhawks",
@@ -109,7 +114,8 @@ def normalize_team_name(name: str) -> str:
 def _fuzzy_match(name: str) -> str:
     """Find the closest canonical name using fuzzy matching."""
     all_names = list(_ALIAS_TO_CANONICAL.keys())
-    matches = difflib.get_close_matches(name.lower(), all_names, n=1, cutoff=0.7)
+    # Use high cutoff to avoid false matches (e.g., "Michigan" -> "Michigan St.")
+    matches = difflib.get_close_matches(name.lower(), all_names, n=1, cutoff=0.85)
     if matches:
         return _ALIAS_TO_CANONICAL[matches[0]]
     # If no match, return as-is (many teams won't be in our alias list)

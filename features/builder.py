@@ -27,10 +27,13 @@ def collect_data(force_scrape: bool = False) -> dict:
     # Get tournament bracket and teams
     print("\n--- Tournament Bracket ---")
     bracket_df = scrape_bracket(force=force_scrape)
+    tournament_teams = []
     if bracket_df is not None and not bracket_df.empty:
         tournament_teams = get_tournament_teams(bracket_df)
         print(f"Got {len(tournament_teams)} teams from NCAA API")
-    else:
+
+    if len(tournament_teams) < 32:
+        print("Insufficient bracket data from API, using fallback bracket...")
         tournament_teams = get_bracket_from_fallback()
         print(f"Using fallback bracket: {len(tournament_teams)} teams")
 

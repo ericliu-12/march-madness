@@ -12,7 +12,7 @@ from config import RANDOM_SEED
 try:
     import xgboost as xgb
     HAS_XGBOOST = True
-except ImportError:
+except (ImportError, OSError):
     HAS_XGBOOST = False
 
 

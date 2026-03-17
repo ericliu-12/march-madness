@@ -20,7 +20,7 @@ from models.calibration import ProbabilityCalibrator, clip_probability
 
 try:
     from models.xgboost_model import XGBoostModel, HAS_XGBOOST
-except ImportError:
+except (ImportError, OSError):
     HAS_XGBOOST = False
 
 

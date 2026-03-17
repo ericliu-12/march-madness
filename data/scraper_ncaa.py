@@ -162,7 +162,7 @@ def get_tournament_teams(bracket_df: pd.DataFrame | None = None) -> list[dict]:
 # Fallback: manually define the 2026 bracket if the API isn't serving data yet
 BRACKET_2026_FALLBACK = {
     "East": [
-        (1, "Duke"), (16, "American / Mount St. Mary's"),
+        (1, "Duke"), (16, "Mount St. Mary's"),
         (8, "Memphis"), (9, "Florida State"),
         (5, "Michigan State"), (12, "UC San Diego"),
         (4, "Arizona State"), (13, "Yale"),
@@ -172,27 +172,27 @@ BRACKET_2026_FALLBACK = {
         (2, "Alabama"), (15, "Robert Morris"),
     ],
     "South": [
-        (1, "Arizona"), (16, "Norfolk State / Texas Southern"),
+        (1, "Arizona"), (16, "Norfolk State"),
         (8, "Louisville"), (9, "Georgia"),
         (5, "Oregon"), (12, "Liberty"),
         (4, "Purdue"), (13, "High Point"),
-        (6, "Illinois"), (11, "Drake / Vanderbilt"),
+        (6, "Illinois"), (11, "Drake"),
         (3, "Texas Tech"), (14, "UNC Wilmington"),
         (7, "Marquette"), (10, "New Mexico"),
         (2, "Iowa State"), (15, "Omaha"),
     ],
     "Midwest": [
-        (1, "Michigan"), (16, "Norfolk State / Texas Southern"),
+        (1, "Michigan"), (16, "Texas Southern"),
         (8, "San Diego State"), (9, "Baylor"),
         (5, "Clemson"), (12, "McNeese State"),
         (4, "Maryland"), (13, "Grand Canyon"),
-        (6, "BYU"), (11, "VCU / North Carolina"),
+        (6, "BYU"), (11, "North Carolina"),
         (3, "Texas A&M"), (14, "Troy"),
         (7, "Dayton"), (10, "Mississippi State"),
         (2, "St. John's"), (15, "Omaha"),
     ],
     "West": [
-        (1, "Florida"), (16, "SIU Edwardsville / Stonehill"),
+        (1, "Florida"), (16, "SIU Edwardsville"),
         (8, "UConn"), (9, "Gonzaga"),
         (5, "Houston"), (12, "Western Kentucky"),
         (4, "Tennessee"), (13, "Vermont"),
@@ -209,22 +209,12 @@ def get_bracket_from_fallback() -> list[dict]:
     teams = []
     for region, matchups in BRACKET_2026_FALLBACK.items():
         for seed, name in matchups:
-            # Handle play-in games (two teams separated by /)
-            if " / " in name:
-                for sub_name in name.split(" / "):
-                    teams.append({
-                        "name": sub_name.strip(),
-                        "seed": seed,
-                        "region": region,
-                        "is_play_in": True,
-                    })
-            else:
-                teams.append({
-                    "name": name,
-                    "seed": seed,
-                    "region": region,
-                    "is_play_in": False,
-                })
+            teams.append({
+                "name": name,
+                "seed": seed,
+                "region": region,
+                "is_play_in": False,
+            })
     return teams
 
 

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(pip3 list:*)",
+      "WebFetch(domain:barttorvik.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.sports-reference.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.sports-reference.com)",
+      "WebFetch(domain:site.api.espn.com)",
+      "WebFetch(domain:data.ncaa.com)",
+      "Bash(pip3 show:*)",
+      "WebFetch(domain:ncaa-api.henrygd.me)",
+      "Bash(git init:*)",
+      "Bash(mkdir -p data features models bracket output cache historical_data)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(brew install:*)"
+    ]
+  }
+}

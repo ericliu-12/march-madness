@@ -67,32 +67,44 @@ def _prepare_espn(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame()
     out["name_norm"] = df["name"].apply(normalize_team_name)
 
-    # Map ESPN stat names to our standard names
-    col_map = {}
-    for col in df.columns:
-        cl = col.lower()
-        if "ppg" in cl or (col.endswith("_PTS") and "opp" not in cl.lower()):
-            col_map[col] = "ppg_espn"
-        elif "fg%" in cl or "fgpct" in cl.lower():
-            col_map[col] = "fg_pct_espn"
-        elif "3p%" in cl or "3ptpct" in cl.lower():
-            col_map[col] = "three_pct_espn"
-        elif "ft%" in cl or "ftpct" in cl.lower():
-            col_map[col] = "ft_pct_espn"
-        elif "rpg" in cl or "reb" in cl.lower():
-            col_map[col] = "rpg_espn"
-        elif "apg" in cl or "ast" in cl.lower():
-            col_map[col] = "apg_espn"
-        elif "spg" in cl or "stl" in cl.lower():
-            col_map[col] = "spg_espn"
-        elif "bpg" in cl or "blk" in cl.lower():
-            col_map[col] = "bpg_espn"
-        elif "topg" in cl or "turnover" in cl.lower():
-            col_map[col] = "topg_espn"
+    # Actual ESPN API column names -> our standard names
+    gp = pd.to_numeric(df.get("General_GP", pd.Series(dtype=float)), errors="coerce").replace(0, np.nan)
 
-    for old_col, new_col in col_map.items():
-        if old_col in df.columns and new_col not in out.columns:
-            out[new_col] = pd.to_numeric(df[old_col], errors="coerce")
+    # Per-game stats
+    if "Offensive_PTS" in df.columns and gp is not None:
+        out["ppg_espn"] = pd.to_numeric(df["Offensive_PTS"], errors="coerce") / gp
+
+    if "General_REB" in df.columns and gp is not None:
+        out["rpg_espn"] = pd.to_numeric(df["General_REB"], errors="coerce") / gp
+
+    if "Offensive_AST" in df.columns and gp is not None:
+        out["apg_espn"] = pd.to_numeric(df["Offensive_AST"], errors="coerce") / gp
+
+    if "Offensive_TO" in df.columns and gp is not None:
+        out["topg_espn"] = pd.to_numeric(df["Offensive_TO"], errors="coerce") / gp
+
+    if "Defensive_STL" in df.columns and gp is not None:
+        out["spg_espn"] = pd.to_numeric(df["Defensive_STL"], errors="coerce") / gp
+
+    if "Defensive_BLK" in df.columns and gp is not None:
+        out["bpg_espn"] = pd.to_numeric(df["Defensive_BLK"], errors="coerce") / gp
+
+    # Shooting percentages
+    for espn_col, our_col in [
+        ("Offensive_FG%", "fg_pct_espn"),
+        ("Offensive_3P%", "three_pct_espn"),
+        ("Offensive_FT%", "ft_pct_espn"),
+        ("Offensive_SC-EFF", "scoring_eff_espn"),
+        ("General_AST/TO", "ast_to_ratio_espn"),
+    ]:
+        if espn_col in df.columns:
+            out[our_col] = pd.to_numeric(df[espn_col], errors="coerce")
+
+    # Offensive rebound total for later calculations
+    if "Offensive_OR" in df.columns:
+        out["oreb_espn"] = pd.to_numeric(df["Offensive_OR"], errors="coerce")
+    if "Defensive_DR" in df.columns:
+        out["dreb_espn"] = pd.to_numeric(df["Defensive_DR"], errors="coerce")
 
     return out.drop_duplicates(subset="name_norm")
 
@@ -104,29 +116,29 @@ def _prepare_sportsref(df: pd.DataFrame) -> pd.DataFrame:
     name_col = "school_name" if "school_name" in df.columns else df.columns[0]
     out["name_norm"] = df[name_col].apply(normalize_team_name)
 
+    # Actual Sports-Reference column names -> our standard names
     col_map = {
         "srs": "srs",
         "sos": "sos",
         "pace": "pace",
-        "o_rtg": "off_efficiency_sref",
-        "d_rtg": "def_efficiency_sref",
-        "ftr": "ftr_o_sref",
-        "x3p_ar": "three_rate_o_sref",
+        "off_rtg": "off_efficiency_sref",
+        "fta_per_fga_pct": "ftr_o_sref",
+        "fg3a_per_fga_pct": "three_rate_o_sref",
         "ts_pct": "ts_pct_sref",
         "trb_pct": "trb_pct",
         "ast_pct": "ast_pct",
         "stl_pct": "stl_pct",
         "blk_pct": "blk_pct",
-        "e_fg_pct": "efg_o_sref",
+        "efg_pct": "efg_o_sref",
         "tov_pct": "tov_o_sref",
         "orb_pct": "orb_o_sref",
-        "ft_fga": "ftr_o_sref2",
-        "e_fg_pct_2": "efg_d_sref",
-        "tov_pct_2": "tov_d_sref",
-        "orb_pct_2": "orb_d_sref",
-        "ft_fga_2": "ftr_d_sref",
-        "w": "wins_sref",
-        "l": "losses_sref",
+        "ft_rate": "ftr_o_sref2",
+        "wins": "wins_sref",
+        "losses": "losses_sref",
+        "pts": "pts_sref",
+        "opp_pts": "opp_pts_sref",
+        "win_loss_pct": "win_pct_sref",
+        "g": "games_sref",
     }
 
     for old_col, new_col in col_map.items():
@@ -179,6 +191,22 @@ def _consolidate(df: pd.DataFrame) -> pd.DataFrame:
     # Efficiency metrics
     df["adjoe"] = _coalesce(df, "adjoe", "off_efficiency_sref")
     df["adjde"] = _coalesce(df, "adjde", "def_efficiency_sref")
+
+    # Estimate defensive efficiency if missing: DRtg ≈ opp_ppg / pace * 100
+    # Or more directly: ORtg - SRS ≈ DRtg (since SRS ≈ point_diff scaled)
+    if df["adjde"].isna().all():
+        opp_ppg_est = _coalesce(df, "opp_pts_sref")
+        games = _coalesce(df, "games_sref")
+        pace_est = _coalesce(df, "pace")
+        if opp_ppg_est.notna().any() and games.notna().any() and pace_est.notna().any():
+            # DRtg = (opp_pts_per_game / pace) * 100
+            # This is approximate but captures relative defensive strength
+            opp_ppg_calc = opp_ppg_est / games
+            df["adjde"] = (opp_ppg_calc / pace_est) * 100
+        elif df["adjoe"].notna().any() and _coalesce(df, "srs").notna().any():
+            # Fallback: ORtg - SRS ≈ DRtg
+            df["adjde"] = df["adjoe"] - _coalesce(df, "srs")
+
     df["adjem"] = df["adjoe"] - df["adjde"]
 
     # Barthag: if not from Torvik, estimate from efficiency margin
@@ -201,17 +229,26 @@ def _consolidate(df: pd.DataFrame) -> pd.DataFrame:
     df["srs"] = _coalesce(df, "srs")
     df["sos"] = _coalesce(df, "sos")
 
-    # PPG from ESPN
-    df["ppg"] = _coalesce(df, "ppg_espn")
-    df["opp_ppg"] = df.get("opp_ppg", pd.Series(dtype=float))
-    df["point_diff"] = df["ppg"] - df["opp_ppg"] if "opp_ppg" in df.columns else df["adjem"]
+    # PPG: prefer SportsRef (total pts / games), fall back to ESPN
+    if "pts_sref" in df.columns and "games_sref" in df.columns:
+        games = df["games_sref"].replace(0, np.nan)
+        ppg_sref = df["pts_sref"] / games
+        opp_ppg_sref = df["opp_pts_sref"] / games if "opp_pts_sref" in df.columns else pd.Series(np.nan, index=df.index)
+    else:
+        ppg_sref = pd.Series(np.nan, index=df.index)
+        opp_ppg_sref = pd.Series(np.nan, index=df.index)
+
+    df["ppg"] = ppg_sref.fillna(_coalesce(df, "ppg_espn"))
+    df["opp_ppg"] = opp_ppg_sref
+    df["point_diff"] = df["ppg"] - df["opp_ppg"]
+    # Fall back to efficiency margin for point_diff if opp_ppg missing
+    df["point_diff"] = df["point_diff"].fillna(df["adjem"])
 
     # Win percentage
-    if "wins_sref" in df.columns and "losses_sref" in df.columns:
+    df["win_pct"] = _coalesce(df, "win_pct_sref")
+    if df["win_pct"].isna().all() and "wins_sref" in df.columns:
         total = df["wins_sref"] + df["losses_sref"]
         df["win_pct"] = df["wins_sref"] / total.replace(0, np.nan)
-    elif "win_pct" not in df.columns:
-        df["win_pct"] = np.nan
 
     # Three-point rate
     df["three_rate_o"] = _coalesce(df, "three_rate_o_torvik", "three_rate_o_sref")
