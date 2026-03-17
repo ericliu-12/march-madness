@@ -160,46 +160,48 @@ def get_tournament_teams(bracket_df: pd.DataFrame | None = None) -> list[dict]:
 
 
 # Fallback: manually define the 2026 bracket if the API isn't serving data yet
+# Actual 2026 NCAA Tournament bracket (Selection Sunday March 15, 2026)
+# Sources: NCAA.com, ESPN, CBS Sports
 BRACKET_2026_FALLBACK = {
     "East": [
-        (1, "Duke"), (16, "Mount St. Mary's"),
-        (8, "Memphis"), (9, "Florida State"),
-        (5, "Michigan State"), (12, "UC San Diego"),
-        (4, "Arizona State"), (13, "Yale"),
-        (6, "Missouri"), (11, "Oklahoma"),
-        (3, "Wisconsin"), (14, "Lipscomb"),
-        (7, "Kansas"), (10, "Arkansas"),
-        (2, "Alabama"), (15, "Robert Morris"),
+        (1, "Duke"), (16, "Siena"),
+        (8, "Ohio State"), (9, "TCU"),
+        (5, "St. John's"), (12, "Northern Iowa"),
+        (4, "Kansas"), (13, "Cal Baptist"),
+        (6, "Louisville"), (11, "South Florida"),
+        (3, "Michigan State"), (14, "North Dakota State"),
+        (7, "UCLA"), (10, "UCF"),
+        (2, "UConn"), (15, "Furman"),
     ],
     "South": [
-        (1, "Arizona"), (16, "Norfolk State"),
-        (8, "Louisville"), (9, "Georgia"),
-        (5, "Oregon"), (12, "Liberty"),
-        (4, "Purdue"), (13, "High Point"),
-        (6, "Illinois"), (11, "Drake"),
-        (3, "Texas Tech"), (14, "UNC Wilmington"),
-        (7, "Marquette"), (10, "New Mexico"),
-        (2, "Iowa State"), (15, "Omaha"),
+        (1, "Florida"), (16, "Prairie View A&M"),  # Play-in winner
+        (8, "Clemson"), (9, "Iowa"),
+        (5, "Vanderbilt"), (12, "McNeese"),
+        (4, "Nebraska"), (13, "Troy"),
+        (6, "North Carolina"), (11, "VCU"),
+        (3, "Illinois"), (14, "Penn"),
+        (7, "Saint Mary's"), (10, "Texas A&M"),
+        (2, "Houston"), (15, "Idaho"),
     ],
     "Midwest": [
-        (1, "Michigan"), (16, "Texas Southern"),
-        (8, "San Diego State"), (9, "Baylor"),
-        (5, "Clemson"), (12, "McNeese State"),
-        (4, "Maryland"), (13, "Grand Canyon"),
-        (6, "BYU"), (11, "North Carolina"),
-        (3, "Texas A&M"), (14, "Troy"),
-        (7, "Dayton"), (10, "Mississippi State"),
-        (2, "St. John's"), (15, "Omaha"),
+        (1, "Michigan"), (16, "UMBC"),  # Play-in winner
+        (8, "Georgia"), (9, "Saint Louis"),
+        (5, "Texas Tech"), (12, "Akron"),
+        (4, "Alabama"), (13, "Hofstra"),
+        (6, "Tennessee"), (11, "SMU"),  # Play-in winner
+        (3, "Virginia"), (14, "Wright State"),
+        (7, "Kentucky"), (10, "Santa Clara"),
+        (2, "Iowa State"), (15, "Tennessee State"),
     ],
     "West": [
-        (1, "Florida"), (16, "SIU Edwardsville"),
-        (8, "UConn"), (9, "Gonzaga"),
-        (5, "Houston"), (12, "Western Kentucky"),
-        (4, "Tennessee"), (13, "Vermont"),
-        (6, "UCLA"), (11, "Colorado State"),
-        (7, "Saint Mary's"), (10, "Nevada"),
-        (3, "Kentucky"), (14, "Troy"),
-        (2, "Auburn"), (15, "Wofford"),
+        (1, "Arizona"), (16, "LIU"),
+        (8, "Villanova"), (9, "Utah State"),
+        (5, "Wisconsin"), (12, "High Point"),
+        (4, "Arkansas"), (13, "Hawaii"),
+        (6, "BYU"), (11, "Texas"),  # Play-in winner
+        (3, "Gonzaga"), (14, "Kennesaw State"),
+        (7, "Miami"), (10, "Missouri"),
+        (2, "Purdue"), (15, "Queens"),
     ],
 }
 

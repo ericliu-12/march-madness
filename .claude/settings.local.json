@@ -21,7 +21,14 @@
       "Bash(pip install:*)",
       "Bash(python:*)",
       "Bash(brew install:*)",
-      "Bash(pkill -f \"python main.py\")"
+      "Bash(pkill -f \"python main.py\")",
+      "Bash(git push:*)",
+      "WebFetch(domain:www.ncaa.com)",
+      "WebFetch(domain:www.espn.com)",
+      "WebFetch(domain:www.cbssports.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:www.on3.com)",
+      "WebFetch(domain:sports.yahoo.com)"
     ]
   }
 }
