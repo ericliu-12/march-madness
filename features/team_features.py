@@ -189,29 +189,29 @@ def _consolidate(df: pd.DataFrame) -> pd.DataFrame:
     Priority: Torvik > Sports-Ref > ESPN.
     """
     # Efficiency metrics
+    # When Torvik data is available, use their adjusted metrics directly
+    # When only SportsRef is available, use SRS as the primary quality metric
+    # SRS (Simple Rating System) IS schedule-adjusted, unlike raw ORtg
     df["adjoe"] = _coalesce(df, "adjoe", "off_efficiency_sref")
     df["adjde"] = _coalesce(df, "adjde", "def_efficiency_sref")
 
-    # Estimate defensive efficiency if missing: DRtg ≈ opp_ppg / pace * 100
-    # Or more directly: ORtg - SRS ≈ DRtg (since SRS ≈ point_diff scaled)
+    # Estimate defensive efficiency if missing
     if df["adjde"].isna().all():
-        opp_ppg_est = _coalesce(df, "opp_pts_sref")
-        games = _coalesce(df, "games_sref")
-        pace_est = _coalesce(df, "pace")
-        if opp_ppg_est.notna().any() and games.notna().any() and pace_est.notna().any():
-            # DRtg = (opp_pts_per_game / pace) * 100
-            # This is approximate but captures relative defensive strength
-            opp_ppg_calc = opp_ppg_est / games
-            df["adjde"] = (opp_ppg_calc / pace_est) * 100
-        elif df["adjoe"].notna().any() and _coalesce(df, "srs").notna().any():
-            # Fallback: ORtg - SRS ≈ DRtg
-            df["adjde"] = df["adjoe"] - _coalesce(df, "srs")
+        srs = _coalesce(df, "srs")
+        if srs.notna().any() and df["adjoe"].notna().any():
+            # DRtg = ORtg - SRS (SRS is schedule-adjusted point differential)
+            # This is the best approximation without Torvik
+            df["adjde"] = df["adjoe"] - srs
 
-    df["adjem"] = df["adjoe"] - df["adjde"]
+    # Use SRS as the schedule-adjusted efficiency margin
+    # This is more reliable than raw ORtg - DRtg for teams with weak schedules
+    srs = _coalesce(df, "srs")
+    df["adjem"] = srs.where(srs.notna(), df["adjoe"] - df["adjde"])
 
-    # Barthag: if not from Torvik, estimate from efficiency margin
+    # Barthag: estimate from SRS (which accounts for schedule)
+    # Average D-I SRS is ~0, top teams are ~25-30
+    # Map SRS to 0-1 probability range using logistic function
     if "barthag" not in df.columns or df["barthag"].isna().all():
-        # Rough approximation: barthag ≈ sigmoid(adjem / 10)
         df["barthag"] = 1 / (1 + np.exp(-df["adjem"] / 10))
 
     # Four factors

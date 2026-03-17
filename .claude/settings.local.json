@@ -20,7 +20,8 @@
       "Bash(git commit:*)",
       "Bash(pip install:*)",
       "Bash(python:*)",
-      "Bash(brew install:*)"
+      "Bash(brew install:*)",
+      "Bash(pkill -f \"python main.py\")"
     ]
   }
 }
